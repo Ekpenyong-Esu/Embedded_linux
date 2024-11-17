@@ -1,8 +1,27 @@
+# Ignore object files
 *.o
-writer
+
+# Ignore writer directory
+writer/
+finder/
+
+# Ignore test runner files
 Test_*_Runner.c
+actions-runner/
+
+# Ignore build directory
 build/
-crosstool-ng
-aesd-build
+
+# Ignore crosstool-ng directory
+crosstool-ng/
+
+# Ignore aesd-build directory
+aesd-build/
+
+# Ignore .vscode directory
 .vscode/
+
+# Ignore test.sh.log file
+test.sh.log*.o
+
 test.sh.log
