@@ -1,4 +1,5 @@
 # aesd-assignments
+
 This repo contains public starter source code, scripts, and documentation for Advanced Embedded Software Development (ECEN-5713) and Advanced Embedded Linux Development assignments University of Colorado, Boulder.
 
 ## Setting Up Git
@@ -18,11 +19,28 @@ Some assignments require further setup to pull in example code or make other cha
 The basis of the automated test implementation for this repository comes from [https://github.com/cu-ecen-aeld/assignment-autotest/](https://github.com/cu-ecen-aeld/assignment-autotest/)
 
 The assignment-autotest directory contains scripts useful for automated testing  Use
-```
+
+```bash
 git submodule update --init --recursive
 ```
+
 to synchronize after cloning and before starting each assignment, as discussed in the assignment instructions.
 
 As a part of the assignment instructions, you will setup your assignment repo to perform automated testing using github actions.  See [this page](https://github.com/cu-ecen-aeld/aesd-assignments/wiki/Setting-up-Github-Actions) for details.
 
-Note that the unit tests will fail on this repository, since assignments are not yet implemented.  That's your job :) 
+Note that the unit tests will fail on this repository, since assignments are not yet implemented.  That's your job :)
+
+## How to find the version ot the toolchain
+
+```bash
+mkdir -p assignments/assignment2
+aarch64-none-linux-gnu-gcc -v > assignments/assignment2/cross-compile.txt 2>&1
+echo -e "\nSysroot Path:" >> assignments/assignment2/cross-compile.txt
+aarch64-none-linux-gnu-gcc -print-sysroot >> assignments/assignment2/cross-compile.txt
+```
+
+## How to export arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu
+
+```bash
+export PATH=$PATH:/home/mahonri/Desktop/Embedded_linux/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin
+```
