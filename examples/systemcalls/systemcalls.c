@@ -1,4 +1,10 @@
 #include "systemcalls.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,7 +22,19 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+     // Check if the command is valid
+    if (cmd == NULL) {
+        return false; // Invalid command
+    }
 
+    // Execute the command using the system() function
+    int result = system(cmd);
+
+    // Check if the command was executed successfully
+    if (result != 0)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -36,18 +54,22 @@ bool do_system(const char *cmd)
 
 bool do_exec(int count, ...)
 {
-    va_list args;
+    // va_list is a type to hold information about variable arguments. unspecified arguments
+    va_list args; // list of arguments
+
+    // va_start initializes the va_list to retrieve the variable arguments
     va_start(args, count);
+
+    // create an array of strings to hold the command and arguments
     char * command[count+1];
-    int i;
-    for(i=0; i<count; i++)
+
+    // populate the command array with the arguments from the va_list
+    int num_of_argue = 0;
+    for(num_of_argue=0; num_of_argue<count; num_of_argue++)
     {
-        command[i] = va_arg(args, char *);
+        command[num_of_argue] = va_arg(args, char *);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
 
 /*
  * TODO:
@@ -58,10 +80,34 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    pid_t pid = fork();
 
-    va_end(args);
+    // Check if the fork was successful
+    if (pid == -1){
+        // fork failed
+        perror("fork failed");
+        return false;
+    }
+    else if (pid == 0) {
 
-    return true;
+        // Child process
+        execv(command[0], command);
+
+        // If execv returns, there was an error
+        perror("execv");
+
+        exit(EXIT_FAILURE);
+    }
+    else {
+        // Parent process
+        int status = 0;
+        waitpid(pid, &status, 0);
+
+        va_end(args);
+
+        // Check if child exited normally
+        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    }
 }
 
 /**
@@ -72,18 +118,16 @@ bool do_exec(int count, ...)
 bool do_exec_redirect(const char *outputfile, int count, ...)
 {
     va_list args;
+
     va_start(args, count);
+
     char * command[count+1];
-    int i;
-    for(i=0; i<count; i++)
+    int num_of_argue = 0;
+    for(num_of_argue=0; num_of_argue<count; num_of_argue++)
     {
-        command[i] = va_arg(args, char *);
+        command[num_of_argue] = va_arg(args, char *);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
-
 
 /*
  * TODO
@@ -93,7 +137,39 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *
 */
 
-    va_end(args);
-
-    return true;
+    pid_t pid = fork();
+    if (pid == -1) {
+        // Fork failed
+        perror("fork");
+        return false;
+    }
+    if (pid == 0) {
+        // Child process
+        int file_desc = open(outputfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (file_desc == -1) {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        if (dup2(file_desc, STDOUT_FILENO) == -1) {
+            perror("dup2");
+            close(file_desc);
+            exit(EXIT_FAILURE);
+        }
+        close(file_desc);
+        execv(command[0], command);
+        // If execv returns, there was an error
+        perror("execv");
+        exit(EXIT_FAILURE);
+    }
+    else {
+        // Parent process
+        int status = 0;
+        if (waitpid(pid, &status,0) == -1) {
+            perror("wait");
+            return false;
+        }
+        va_end(args);
+        // Check if child exited normally
+        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    }
 }

@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     const char *file_path = argv[1];
     const char *write_string = argv[2];
     // Open connection to syslog
-    openlog("writer",  LOG_PID|LOG_CONS, LOG_USER);
+    openlog("writer",  LOG_PID, LOG_USER);
 
     // Check arguments
     if (argc != 3) {
