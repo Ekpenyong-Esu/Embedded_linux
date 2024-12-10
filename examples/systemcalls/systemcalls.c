@@ -88,7 +88,7 @@ bool do_exec(int count, ...)
         perror("fork failed");
         return false;
     }
-    else if (pid == 0) {
+    if (pid == 0) {
 
         // Child process
         execv(command[0], command);
