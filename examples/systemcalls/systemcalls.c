@@ -27,7 +27,7 @@ bool do_system(const char *cmd)
         return false; // Invalid command
     }
 
-    // Execute the command using the system() function
+    // Execute the command using the system() function as a shell command
     int result = system(cmd);
 
     // Check if the command was executed successfully
