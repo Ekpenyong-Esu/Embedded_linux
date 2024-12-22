@@ -20,6 +20,7 @@ aesd-build/
 
 # Ignore .vscode directory
 .vscode/
+.cache/
 
 # Ignore test.sh.log file
 test.sh.log*.o
