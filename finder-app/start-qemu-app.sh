@@ -6,7 +6,7 @@ set -e
 
 OUTDIR=$1
 
-if [ -z "${OUTDIR}" ]; then
+if [ -z "${OUTDIR}" ]; then # If OUTDIR is not set, use /tmp/aeld
     OUTDIR=/tmp/aeld
     echo "No outdir specified, using ${OUTDIR}"
 fi

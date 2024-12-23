@@ -11,7 +11,7 @@ actions-runner/
 
 # Ignore build directory
 build/
-
+emb/
 # Ignore crosstool-ng directory
 crosstool-ng/
 
