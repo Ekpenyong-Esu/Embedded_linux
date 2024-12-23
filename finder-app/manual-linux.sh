@@ -16,8 +16,11 @@ ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 
 export PATH=/home/mahonri/Desktop/Embedded_linux/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin:$PATH
+# export ARCH
+# export CROSS_COMPILE
+# export PATH=/home/mahonri/Desktop/Embedded_linux/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu:$PATH
 
-echo "installing dependencies ..."
+echo "################### installing dependencies ...  #############################"
 sudo apt-get update
 sudo apt-get install -y build-essential bc make libc6 libncurses-dev bison flex libssl-dev libelf-dev bc git wget \
         qemu-user-static cpio crossbuild-essential-arm64
@@ -40,7 +43,7 @@ echo "Changing to output directory"
 cd "$OUTDIR"
 
 
-echo "checking if the linux-stable directory exists"
+echo "checking if the linux-stable directory does not exists"
 
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
     #Clone only if the repository does not exist.
@@ -50,6 +53,7 @@ if [ ! -d "${OUTDIR}/linux-stable" ]; then
 fi
 
 
+echo "Checking if the Image file does not exist"
 if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     cd linux-stable
     echo "Checking out version ${KERNEL_VERSION}"
@@ -78,7 +82,7 @@ fi
 
 # TODO: Create necessary base directories
 echo "Creating base directories"
-mkdir -p ${OUTDIR}/rootfs/{bin,dev,home,var/{log},tmp,sbin,etc,proc,sys,lib64,usr/{bin,sbin,lib},lib}
+mkdir -p ${OUTDIR}/rootfs/{bin,dev,home/conf,var/log,tmp,sbin,etc,proc,sys,lib64,usr/{bin,sbin,lib},lib}
 
 
 cd "$OUTDIR"
@@ -101,10 +105,6 @@ fi
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j$(nproc)
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} CONFIG_PREFIX=${OUTDIR}/rootfs install
 
-# make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j$(nproc) install
-# echo "Copying busybox binary"
-#cp ${OUTDIR}/busybox/bin/busybox ${OUTDIR}/rootfs/bin/
-cp ${OUTDIR}/busybox/_install/bin/busybox ${OUTDIR}/rootfs/bin/
 
 
 echo "Library dependencies"
@@ -114,11 +114,10 @@ ${CROSS_COMPILE}readelf -a ${OUTDIR}/rootfs/bin/busybox | grep "Shared library"
 # TODO: Add library dependencies to rootfs
 echo "Adding library dependencies"
 SYSROOT=$(${CROSS_COMPILE}gcc -print-sysroot)
-cp -a ${SYSROOT}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib/
-cp -a ${SYSROOT}/lib64/ld-2.* ${OUTDIR}/rootfs/lib64/
-cp -a ${SYSROOT}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
-cp -a ${SYSROOT}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
-cp -a ${SYSROOT}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib6
+cp -L ${SYSROOT}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+cp -L ${SYSROOT}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
+cp -L ${SYSROOT}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
+cp -L ${SYSROOT}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
 
 # TODO: Make device nodes
 echo "Making device nodes"
@@ -135,11 +134,11 @@ sudo cp writer ${OUTDIR}/rootfs/home/
 # TODO: Copy the finder related scripts and executables to the /home directory
 echo "Copying finder related scripts and executables to the /home directory"
 cp -r ${FINDER_APP_DIR}/finder.sh ${OUTDIR}/rootfs/home/
-cp -r ${FINDER_APP_DIR}/conf/username.txt ${OUTDIR}/rootfs/home/
-cp -r ${FINDER_APP_DIR}/conf/assignment.txt ${OUTDIR}/rootfs/home/
-cp -r ${FINDER_APP_DIR}/finder_test.sh ${OUTDIR}/rootfs/home/
+cp -r ${FINDER_APP_DIR}/conf/username.txt ${OUTDIR}/rootfs/home/conf/
+cp -r ${FINDER_APP_DIR}/conf/assignment.txt ${OUTDIR}/rootfs/home/conf/
+cp -r ${FINDER_APP_DIR}/finder-test.sh ${OUTDIR}/rootfs/home/
 cp -r ${FINDER_APP_DIR}/autorun-qemu.sh ${OUTDIR}/rootfs/home/
-chmod +x ${OUTDIR}/rootfs/home/*
+sudo chmod +x ${OUTDIR}/rootfs/home/*
 
 
 

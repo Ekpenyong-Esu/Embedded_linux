@@ -6,6 +6,11 @@ set -e
 
 OUTDIR=$1
 
+echo "################### installing dependencies ...  #############################"
+sudo apt update
+sudo apt install qemu qemu-system-arm -y
+
+
 if [ -z "${OUTDIR}" ]; then # If OUTDIR is not set, use /tmp/aeld
     OUTDIR=/tmp/aeld
     echo "No outdir specified, using ${OUTDIR}"
