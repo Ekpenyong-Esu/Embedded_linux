@@ -145,7 +145,7 @@ sudo chmod +x ${OUTDIR}/rootfs/home/*
 # on the target rootfs
 
 # TODO: Chown the root directory
-echo "Chown the root directory"
+echo "Chown of the root directory"
 sudo chown -R root:root ${OUTDIR}/rootfs
 
 
