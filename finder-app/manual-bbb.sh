@@ -222,8 +222,4 @@ EOF
 sudo umount /mnt/boot
 sudo umount /mnt/rootfs
 
-echo "Kernel build completed successfully run QEMU using the start-qemu-app.sh script"
-
 echo "Memory card setup completed successfully"
-
-echo "Kernel build completed successfully run QEMU using the start-qemu-app.sh script"
