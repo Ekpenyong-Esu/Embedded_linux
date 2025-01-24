@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# $1 is the name of the first argument
 case "$1" in
     start)
         echo "Starting aesdsocket server daemon"
