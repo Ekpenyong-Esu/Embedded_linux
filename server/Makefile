@@ -1,6 +1,6 @@
 # Compiler and flags
-CC = $(CROSS_COMPILE)gcc
-CFLAGS = -Wall -Wextra -g -O2
+CC ?= $(CROSS_COMPILE)gcc
+CFLAGS ?= -Wall -Wextra -g -O2
 
 # Target executable
 TARGET = aesdsocket
