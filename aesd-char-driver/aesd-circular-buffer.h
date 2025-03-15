@@ -11,9 +11,9 @@
 #ifdef __KERNEL__
 #include <linux/types.h>
 #else
+#include <stdbool.h>
 #include <stddef.h> // size_t
 #include <stdint.h> // uintx_t
-#include <stdbool.h>
 #endif
 
 #define AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED 10
@@ -35,7 +35,7 @@ struct aesd_circular_buffer
     /**
      * An array of pointers to memory allocated for the most recent write operations
      */
-    struct aesd_buffer_entry  entry[AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED];
+    struct aesd_buffer_entry entry[AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED];
     /**
      * The current location in the entry structure where the next write should
      * be stored.
@@ -52,9 +52,21 @@ struct aesd_circular_buffer
 };
 
 extern struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct aesd_circular_buffer *buffer,
-            size_t char_offset, size_t *entry_offset_byte_rtn );
+                                                                                 size_t char_offset,
+                                                                                 size_t *entry_offset_byte_rtn);
 
-extern void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry);
+extern void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer,
+                                           const struct aesd_buffer_entry *add_entry);
+
+/**
+ * Removes the oldest entry in the circular buffer
+ * @param buffer The circular buffer to remove from
+ *
+ * Note: This function updates the out_offs to point to
+ * the next oldest entry and clears the full flag if necessary.
+ * It does not free any memory allocated for the buffer entry.
+ */
+extern void aesd_circular_buffer_remove_entry(struct aesd_circular_buffer *buffer);
 
 extern void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer);
 
@@ -62,7 +74,7 @@ extern void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer);
  * Create a for loop to iterate over each member of the circular buffer.
  * Useful when you've allocated memory for circular buffer entries and need to free it
  * @param entryptr is a struct aesd_buffer_entry* to set with the current entry
- * @param buffer is the struct aesd_buffer * describing the buffer
+ * @param buffer is the struct aesd_circular_buffer * describing the buffer
  * @param index is a uint8_t stack allocated value used by this macro for an index
  * Example usage:
  * uint8_t index;
@@ -72,11 +84,9 @@ extern void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer);
  *      free(entry->buffptr);
  * }
  */
-#define AESD_CIRCULAR_BUFFER_FOREACH(entryptr,buffer,index) \
-    for(index=0, entryptr=&((buffer)->entry[index]); \
-            index<AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED; \
-            index++, entryptr=&((buffer)->entry[index]))
-
+#define AESD_CIRCULAR_BUFFER_FOREACH(entryptr, buffer, index)                                                          \
+    for (index = 0, entryptr = &((buffer)->entry[index]); index < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;             \
+         index++, entryptr = &((buffer)->entry[index]))
 
 
 #endif /* AESD_CIRCULAR_BUFFER_H */

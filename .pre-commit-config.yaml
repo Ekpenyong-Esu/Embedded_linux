@@ -13,4 +13,4 @@ repos:
     rev: 'v16.0.3'
     hooks:
       - id: clang-format
-        exclude_types: [javascript, json]
+        exclude_types: [javascript, json,html]
