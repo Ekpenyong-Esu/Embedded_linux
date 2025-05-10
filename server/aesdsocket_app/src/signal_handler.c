@@ -37,6 +37,7 @@ void cleanup_on_signal(void)
     pthread_mutex_destroy(&thread_list_mutex);
 
 #if !USE_AESD_CHAR_DEVICE
+    // Only remove the file if we're not using the character device
     unlink(FILE_PATH);
 #endif
 

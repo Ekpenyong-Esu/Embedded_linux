@@ -38,8 +38,12 @@ void *handle_client(void *arg)
             break;
         }
 
-        // Open with O_APPEND flag to append to existing content
-        file_desc = open(FILE_PATH, O_RDWR | O_CREAT | O_TRUNC, FILE_PERMISSIONS);
+#if USE_AESD_CHAR_DEVICE
+        // For char driver, directly write to device - it handles the buffer internally
+        file_desc = open(FILE_PATH, O_RDWR);
+#else
+        file_desc = open(FILE_PATH, O_RDWR | O_CREAT | O_APPEND, FILE_PERMISSIONS);
+#endif
         if (file_desc == -1)
         {
             syslog(LOG_ERR, "Failed to open file: %s", strerror(errno));
@@ -57,16 +61,17 @@ void *handle_client(void *arg)
 
         if (memchr(buffer, '\n', bytes_received))
         {
-            close(file_desc);
-            // Reopen file for reading from the beginning
-            file_desc = open(FILE_PATH, O_RDONLY);
-            if (file_desc == -1)
+#if !USE_AESD_CHAR_DEVICE
+            // Only need to seek for regular file, not for char device
+            if (lseek(file_desc, 0, SEEK_SET) == -1)
             {
-                syslog(LOG_ERR, "Failed to reopen file for reading: %s", strerror(errno));
+                syslog(LOG_ERR, "Seek error: %s", strerror(errno));
+                close(file_desc);
                 pthread_mutex_unlock(&file_mutex);
                 break;
             }
-
+#endif
+            // Read back all accumulated data
             while ((bytes_received = read(file_desc, buffer, buffer_size - 1)) > 0)
             {
                 if (write_all(data->client_socket, buffer, bytes_received) != bytes_received)
@@ -75,9 +80,6 @@ void *handle_client(void *arg)
                     break;
                 }
             }
-            close(file_desc);
-            pthread_mutex_unlock(&file_mutex);
-            break;
         }
 
         close(file_desc);
