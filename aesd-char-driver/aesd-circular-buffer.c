@@ -7,9 +7,12 @@
  */
 
 #ifdef __KERNEL__
+#include <linux/printk.h>
 #include <linux/string.h>
+#define DEBUG_LOG(fmt, ...) printk(KERN_DEBUG "aesd_circular: " fmt, ##__VA_ARGS__)
 #else
 #include <string.h>
+#define DEBUG_LOG(fmt, ...) /* No logging in user space */
 #endif
 
 #include "aesd-circular-buffer.h"
@@ -24,28 +27,29 @@
  */
 void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
 {
-    /**
-     * Implement this function
-     */
-    if (buffer == NULL || add_entry == NULL)
+    if (!buffer || !add_entry || !add_entry->buffptr)
     {
+        DEBUG_LOG("Invalid parameters in add_entry\n");
         return;
     }
+
+    DEBUG_LOG("Adding entry of size %zu at position %d\n", add_entry->size, buffer->in_offs);
 
     // Add the entry at the current in_offs position
     buffer->entry[buffer->in_offs] = *add_entry;
 
-    // If the buffer is full, we need to advance the out_offs pointer as well
+    // If buffer is full, advance out_offs
     if (buffer->full)
     {
+        DEBUG_LOG("Buffer full, advancing out_offs from %d\n", buffer->out_offs);
         buffer->out_offs = (buffer->out_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
     }
 
-    // Advance the in_offs pointer to the next position
+    // Advance in_offs and update full flag
     buffer->in_offs = (buffer->in_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
-
-    // Check if the buffer is now full (in_offs has caught up with out_offs)
     buffer->full = (buffer->in_offs == buffer->out_offs);
+
+    DEBUG_LOG("Buffer state after add: in=%d, out=%d, full=%d\n", buffer->in_offs, buffer->out_offs, buffer->full);
 }
 
 /**
@@ -55,29 +59,30 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
  */
 void aesd_circular_buffer_remove_entry(struct aesd_circular_buffer *buffer)
 {
-    /**
-     * Implement this function
-     */
-    if (buffer == NULL)
+    if (!buffer)
     {
+        DEBUG_LOG("Invalid buffer parameter in remove_entry\n");
         return;
     }
 
-    // If buffer is empty, nothing to remove
-    if ((buffer->in_offs == buffer->out_offs) && !buffer->full)
+    // Check if buffer is empty
+    if (!buffer->full && (buffer->in_offs == buffer->out_offs))
     {
+        DEBUG_LOG("Attempted to remove from empty buffer\n");
         return;
     }
 
-    // Clear the entry - not strictly needed but good practice
+    DEBUG_LOG("Removing entry at position %d\n", buffer->out_offs);
+
+    // Clear the entry
     buffer->entry[buffer->out_offs].buffptr = NULL;
     buffer->entry[buffer->out_offs].size = 0;
 
-    // Advance the out_offs pointer
+    // Advance out_offs and update full flag
     buffer->out_offs = (buffer->out_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
-
-    // The buffer is no longer full
     buffer->full = false;
+
+    DEBUG_LOG("Buffer state after remove: in=%d, out=%d, full=%d\n", buffer->in_offs, buffer->out_offs, buffer->full);
 }
 
 /**
@@ -86,7 +91,14 @@ void aesd_circular_buffer_remove_entry(struct aesd_circular_buffer *buffer)
  */
 void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer)
 {
+    if (!buffer)
+    {
+        DEBUG_LOG("Invalid buffer parameter in init\n");
+        return;
+    }
+
     memset(buffer, 0, sizeof(struct aesd_circular_buffer));
+    DEBUG_LOG("Buffer initialized\n");
 }
 
 /**
@@ -101,46 +113,51 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
                                                                           size_t char_offset,
                                                                           size_t *entry_offset_byte_rtn)
 {
-    /**
-     * Implement this function
-     */
-    uint8_t index;
-    size_t position = 0;
-    uint8_t entries_traversed = 0;
-
-    if (buffer == NULL || entry_offset_byte_rtn == NULL)
+    if (!buffer || !entry_offset_byte_rtn)
     {
+        DEBUG_LOG("Invalid parameters in find_entry\n");
         return NULL;
     }
 
-    // Start from out_offs and go through all valid entries
-    index = buffer->out_offs;
+    size_t current_pos = 0;
+    uint8_t current_idx = buffer->out_offs;
+    uint8_t entries_checked = 0;
+    uint8_t total_entries;
 
-    // Calculate how many entries to examine
-    uint8_t count = buffer->full ? AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED : buffer->in_offs - buffer->out_offs;
-    if (buffer->in_offs < buffer->out_offs && !buffer->full)
+    // Calculate total valid entries
+    if (buffer->full)
     {
-        count = AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - buffer->out_offs + buffer->in_offs;
+        total_entries = AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
+    }
+    else if (buffer->in_offs >= buffer->out_offs)
+    {
+        total_entries = buffer->in_offs - buffer->out_offs;
+    }
+    else
+    {
+        total_entries = AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - buffer->out_offs + buffer->in_offs;
     }
 
-    // Go through each valid entry
-    while (entries_traversed < count)
+    DEBUG_LOG("Searching for offset %zu in %d entries\n", char_offset, total_entries);
+
+    // Search through valid entries
+    while (entries_checked < total_entries)
     {
-        // If the char_offset falls within this entry
-        if (char_offset < position + buffer->entry[index].size)
+        size_t entry_size = buffer->entry[current_idx].size;
+
+        // Check if offset falls within this entry
+        if (char_offset < current_pos + entry_size)
         {
-            *entry_offset_byte_rtn = char_offset - position;
-            return &buffer->entry[index];
+            *entry_offset_byte_rtn = char_offset - current_pos;
+            DEBUG_LOG("Found offset in entry %d at relative offset %zu\n", current_idx, *entry_offset_byte_rtn);
+            return &buffer->entry[current_idx];
         }
 
-        // Advance position by the size of this entry
-        position += buffer->entry[index].size;
-
-        // Move to next entry
-        index = (index + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
-        entries_traversed++;
+        current_pos += entry_size;
+        current_idx = (current_idx + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED;
+        entries_checked++;
     }
 
-    // Not found
+    DEBUG_LOG("Offset %zu not found in buffer\n", char_offset);
     return NULL;
 }

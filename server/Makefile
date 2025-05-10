@@ -1,6 +1,7 @@
 # Compiler and flags
 CC ?= $(CROSS_COMPILE)gcc
 CFLAGS ?= -Wall -Wextra -g -O2
+CFLAGS += -DUSE_AESD_CHAR_DEVICE=1
 LDFLAGS ?= -pthread -lrt
 
 # Target executable
