@@ -3,8 +3,8 @@
  * @brief Main entry point for the AESD char driver
  */
 
-#include "char-driver/include/aesd-char-common.h"
-#include "char-driver/include/aesdchar.h"
+#include <aesd-char-common.h>
+#include <aesdchar.h>
 #include <linux/cdev.h>
 #include <linux/fs.h>
 #include <linux/init.h>
@@ -30,7 +30,7 @@ extern struct file_operations aesd_fops;
 extern int aesd_setup_cdev(struct aesd_dev *dev);
 extern void aesd_cleanup_device(struct aesd_dev *dev);
 
-int aesd_init_module(void)
+static int __init aesd_init_module(void)
 {
     dev_t dev = 0;
     int result;
@@ -55,7 +55,7 @@ int aesd_init_module(void)
     return result;
 }
 
-void aesd_cleanup_module(void)
+static void __exit aesd_cleanup_module(void)
 {
     dev_t devno = MKDEV(aesd_major, aesd_minor);
     aesd_cleanup_device(&aesd_device);

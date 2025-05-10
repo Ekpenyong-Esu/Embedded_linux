@@ -40,11 +40,22 @@ int aesd_handle_write_buffer(struct aesd_dev *dev, const char *new_data, size_t 
 
 void aesd_handle_complete_command(struct aesd_dev *dev)
 {
-    struct aesd_buffer_entry entry = {0};
-    struct aesd_buffer_entry *oldest = NULL;
+    struct aesd_buffer_entry entry;
+    struct aesd_buffer_entry *oldest;
+    char *cmd_buf;
 
-    entry.buffptr = dev->write_buf;
+    if (!dev || !dev->write_buf)
+        return;
+
+    // Save the buffer pointer before adding to circular buffer
+    cmd_buf = dev->write_buf;
+
+    entry.buffptr = cmd_buf;
     entry.size = dev->write_buf_size;
+
+    // Clear device write buffer pointers before adding to circular buffer
+    dev->write_buf = NULL;
+    dev->write_buf_size = 0;
 
     if (dev->buffer.full)
     {
@@ -57,6 +68,4 @@ void aesd_handle_complete_command(struct aesd_dev *dev)
     }
 
     aesd_circular_buffer_add_entry(&dev->buffer, &entry);
-    dev->write_buf = NULL;
-    dev->write_buf_size = 0;
 }

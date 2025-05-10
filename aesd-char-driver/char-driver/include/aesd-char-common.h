@@ -25,10 +25,4 @@ void aesd_handle_complete_command(struct aesd_dev *dev);
 int aesd_setup_cdev(struct aesd_dev *dev);
 void aesd_cleanup_device(struct aesd_dev *dev);
 
-/* Function declarations for file operations */
-int aesd_open(struct inode *inode, struct file *filp);
-int aesd_release(struct inode *inode, struct file *filp);
-ssize_t aesd_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
-ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos);
-
 #endif /* AESD_CHAR_COMMON_H */

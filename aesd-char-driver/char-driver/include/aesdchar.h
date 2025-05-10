@@ -43,8 +43,6 @@ struct aesd_dev
 };
 
 /* Function declarations */
-extern int aesd_init_module(void);
-extern void aesd_cleanup_module(void);
 extern int aesd_open(struct inode *inode, struct file *filp);
 extern int aesd_release(struct inode *inode, struct file *filp);
 extern ssize_t aesd_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
