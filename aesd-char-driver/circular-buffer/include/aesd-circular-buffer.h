@@ -9,11 +9,13 @@
 #define AESD_CIRCULAR_BUFFER_H
 
 #ifdef __KERNEL__
+#include <linux/errno.h>
+#include <linux/string.h>
 #include <linux/types.h>
 #else
 #include <stdbool.h>
-#include <stddef.h> // size_t
-#include <stdint.h> // uintx_t
+#include <stddef.h>
+#include <stdint.h>
 #endif
 
 #define AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED 10

@@ -1,20 +1,28 @@
-#include "../include/aesd-char-common.h"
+#define __KERNEL__
+#include "../include/aesdchar.h"
 #include <linux/cdev.h>
+#include <linux/device.h>
 #include <linux/fs.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 
 int aesd_setup_cdev(struct aesd_dev *dev)
 {
-    int err, devno = MKDEV(aesd_major, aesd_minor);
+    int err = 0;
+    dev_t devno = MKDEV(aesd_major, aesd_minor);
+
+    if (!dev)
+    {
+        return -EINVAL;
+    }
 
     cdev_init(&dev->cdev, &aesd_fops);
     dev->cdev.owner = THIS_MODULE;
-    dev->cdev.ops = &aesd_fops;
     err = cdev_add(&dev->cdev, devno, 1);
     if (err)
     {
-        printk(KERN_ERR "Error %d adding aesd cdev", err);
+        pr_err("Error %d adding aesd cdev", err);
     }
     return err;
 }
@@ -22,21 +30,29 @@ int aesd_setup_cdev(struct aesd_dev *dev)
 void aesd_cleanup_device(struct aesd_dev *dev)
 {
     uint8_t index;
-    struct aesd_buffer_entry *entry;
+    struct aesd_buffer_entry *entry = NULL;
 
-    AESD_CIRCULAR_BUFFER_FOREACH(entry, &dev->buffer, index)
+    if (!dev)
     {
-        if (entry->buffptr)
-        {
-            kfree(entry->buffptr);
-            entry->buffptr = NULL;
-        }
+        return;
     }
 
+    /* Free any pending write buffer */
     if (dev->write_buf)
     {
         kfree(dev->write_buf);
         dev->write_buf = NULL;
         dev->write_buf_size = 0;
+    }
+
+    /* Free all entries in the circular buffer */
+    AESD_CIRCULAR_BUFFER_FOREACH(entry, &dev->buffer, index)
+    {
+        if (entry && entry->buffptr)
+        {
+            kfree((void *)entry->buffptr);
+            entry->buffptr = NULL;
+            entry->size = 0;
+        }
     }
 }
