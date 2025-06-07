@@ -169,6 +169,7 @@ void *handle_client(void *arg)
             }
 #endif
             // Read back all accumulated data and send to client
+            // Reset buffer for reading
             while ((bytes_received = read(file_desc, buffer, buffer_size - 1)) > 0)
             {
                 if (write_all(data->client_socket, buffer, bytes_received) != bytes_received)
