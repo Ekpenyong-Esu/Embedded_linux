@@ -147,7 +147,17 @@ void *handle_client(void *arg)
          */
         if (memchr(buffer, '\n', bytes_received))
         {
-#if !USE_AESD_CHAR_DEVICE
+#if USE_AESD_CHAR_DEVICE
+            // For character device, close and reopen to reset position for reading
+            close(file_desc);
+            file_desc = open(FILE_PATH, O_RDONLY);
+            if (file_desc == -1)
+            {
+                syslog(LOG_ERR, "Failed to reopen file for reading: %s", strerror(errno));
+                pthread_mutex_unlock(&file_mutex);
+                break;
+            }
+#else
             // Only need to seek for regular file, not for char device
             // Character device maintains its own position automatically
             if (lseek(file_desc, 0, SEEK_SET) == -1)
