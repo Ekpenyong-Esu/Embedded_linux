@@ -7,6 +7,8 @@ USE_AESD_CHAR_DEVICE ?= 1
 
 ifeq ($(USE_AESD_CHAR_DEVICE),1)
 	CFLAGS += -DUSE_AESD_CHAR_DEVICE=1
+else
+	CFLAGS += -DUSE_AESD_CHAR_DEVICE=0
 endif
 
 # Target executable
