@@ -178,6 +178,10 @@ void *handle_client(void *arg)
                     break;
                 }
             }
+
+            close(file_desc);
+            pthread_mutex_unlock(&file_mutex);
+            break; // Exit the main receive loop after processing complete message
         }
 
         close(file_desc);
